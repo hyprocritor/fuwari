@@ -10,6 +10,10 @@ export type SiteConfig = {
     hue: number
     fixed: boolean
   }
+  comments: {
+    enable: boolean
+    backendURL: string
+  }
   banner: {
     enable: boolean
     src: string
