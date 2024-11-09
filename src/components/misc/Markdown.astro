@@ -273,8 +273,22 @@ import 'rehype-callouts/theme/vitepress'
       border-radius: 0.75rem
 
     hr
-      border-color: var(--line-divider)
+      border-color: var(--page-bg)
       border-style: dashed
+      margin: 30px 0;
+      border: 0;
+      border-top: 1px solid #4a4a4a;
+      &:after
+        background-color: #4a4a4a;
+        border-radius: 50%;
+        box-shadow: 0 0 0 10px var(--card-bg), 0 0 0 transparent;
+        content: '';
+        height: 10px;
+        left: 50%;
+        position: absolute;
+        transform: translate(-50%, -50%);
+        width: 10px;
+
 
     iframe
       border-radius: 0.75rem
