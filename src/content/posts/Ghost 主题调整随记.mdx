@@ -1,0 +1,285 @@
+---
+title: Ghost主题调整随记
+published: 2024-10-20
+description: '一些 Ghost 主题的配置记录'
+image: ''
+tags: [Ghost, 主题, Artalk]
+category: '前端'
+draft: false
+---
+
+总览
+--
+
+有一说一，相比于满大街都是的Hexo这种静态框架，Ghost 的主题可以用少的很来形容了。但是这种SSG 框架，又缺失了本人最喜欢的所见即所得功能，完全依赖于第三方编辑器的体验实在是有够糟糕的。
+
+Ghost目前还算可以的主题也就LieBling，而且这个至少还能用Apple Sillicon的Mac进行修改（部分主题则由于过于久远，使用了很老版本的 SASS，无法正常编译）。
+
+所以这篇文章，仅用于记录下本次的修改内容。
+
+汉字排版优化
+------
+
+大部分的主题默认只做了英文的配置，所以对于汉字文化圈，包括_重点_在内的标示方法，和英语通常有所不同。例如，中文中通常_没有斜体_这个概念等等。
+
+这里我图省事，从别的主题抄了个排版配置。那个项目使用了下面这个 Github 项目来解决中文排版的问题：
+
+::github{repo="ethantw/Han"}
+
+
+这个库提供了简单的汉字排版配置，使用方法其实也蛮简单的。对于 Ghost 来讲，首先是在 Header 添加样式：
+
+```html
+<link rel="stylesheet" media="all" href="//cdnjs.cloudflare.com/ajax/libs/Han/3.2.7/han.min.css">
+
+```
+
+然后再 Footer 部分添加 JS 文件
+
+```
+<link rel="stylesheet" media="all" href="//cdnjs.cloudflare.com/ajax/libs/Han/3.2.7/han.min.css">
+
+```
+
+之后需要再 `<html>`标签中使用 `lang`来指定语言为`zh-cn`。
+
+对于我用的主题而言，需要再`<article>`添加 class `han-init-context`来避免全站应用，否则会出现样式、滚动条错误的问题。
+
+
+添加目录功能
+------
+
+这个主题意外的没有提供任何目录功能，但是现在写 JS 的人还蛮多的，所以添加目录功能比计划容易不少。
+
+这里直接使用TOCBOT 这个项目来做就好了。
+
+::github{repo="tscanlin/tocbot"}
+
+这个添加也很简单，基本就是引用文件的方式。
+
+引用下面的文件到 `default.hbs`的 Header 里：
+
+```html
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.12.3/tocbot.css">
+<style>
+      .gh-content {
+        position: relative;
+      }
+      .gh-toc > .toc-list {
+        position: relative;
+        font-size: medium;
+      }
+      .toc-list {
+        overflow: hidden;
+        list-style: none;
+      }
+      @media (min-width: 1300px) {
+        .gh-sidebar {
+          position: absolute;
+          top: 12em;
+          bottom: 0;
+          margin-top: 6vmin;
+          left: -300px;
+          width: 400px;
+          grid-column-start: auto;
+        }
+
+        .gh-toc {
+          position: sticky; /* On larger screens, TOC will stay in the same spot on the page */
+          top: 6vmin;
+        }
+      }
+      .gh-toc .is-active-link::before {
+        background-color: var(--ghost-accent-color); /* Defines TOC   accent color based on Accent color set in Ghost Admin */
+      }
+      a.toc-link {
+        text-decoration: none;
+        font-size: medium;
+      }
+</style>
+```
+
+然后把
+
+```html
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.12.3/tocbot.min.js"></script>
+```
+
+
+这段扔到 Post的 Footer 里。
+
+再在下面添加代码来初始化这个工具：
+
+```html
+<script>
+    tocbot.init({
+      // Where to render the table of contents.
+      tocSelector: '.gh-toc',
+      // Where to grab the headings to build the table of contents.
+      contentSelector: '.gh-post',
+      // Which headings to grab inside of the contentSelector element.
+      headingSelector: 'h1, h2, h3, h4',
+      // Ensure correct positioning
+      hasInnerContainers: true,
+      //disable smooth scroll due to wrong position
+      scrollSmooth: false,
+      disableTocScrollSync: false,
+    });
+  </script>
+```
+
+
+相比官方的框架，这里加了点参数来解决跳转 Bug。
+
+*   `scrollSmooth`：关闭平滑滚动
+*   `disableTocScrollSync`: 关闭滚动条同步
+
+下面的就是挨个节点试，看看把`gh-post`这个类扔到哪里（我的建议是单独给文章正文用`div`包起来来避免各种奇怪的问题）。
+
+下面这段扔到`post.hbs`里差不多的位置就行了：
+
+```
+<aside class="gh-sidebar">
+  <div class="gh-toc"></div>
+</aside>
+```
+
+
+### 解决跳转后的锚点被挡住的问题
+
+直接点击跳转后，浏览器会默认将对应的 Anchor放到页面离顶部只有0px的位置，直接导致节点标题被挡住。
+
+为了解决这个问题需要将这添加下面的属性到到 `html`标签里，来指定具体的传送 偏移：
+
+```
+scroll-padding-top: 67px //这里的大小是 offset 的大小，一般设置为 header 的高度。
+```
+
+
+添加代码高亮
+------
+
+代码高亮目前有两个主流方案：
+
+*   highlight.js
+*   prism.js
+
+highlight.js主打一个用起来简单，也主打一个功能也简单，基本的染色功能倒是有，但是其他的什么行号之类的功能都没有。所以基本不做考虑。
+
+prism.js也是一个很不错的库，基本上跟代码块相关的功能基本都有了，但是缺点就是太重了（随着语言增加），也需要动态加载来解决这个东西的引用语言问题。同时，在写代码的时候也需要指定好语言才能动态加载代码。
+
+这里我选择使用 Prism来解决高亮的问题，而添加 prism其实是一个蛮简单的过程，只要在`post.hbs`里添加写 js：
+
+```html
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/toolbar/prism-toolbar.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+```
+
+
+之后在页首添加些许 CSS 即可：
+
+```html
+ <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" integrity="sha512-cbQXwDFK7lj2Fqfkuxbo5iD1dSbLlJGXGpfTDqbggqjHJeyzx88I3rfwjS38WJag/ihH7lzuGlGHpDBymLirZQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/toolbar/prism-toolbar.min.css" integrity="sha512-Dqf5696xtofgH089BgZJo2lSWTvev4GFo+gA2o4GullFY65rzQVQLQVlzLvYwTo0Bb2Gpb6IqwxYWtoMonfdhQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+```
+
+
+比较麻烦的问题是我的主题默认跟Prism 的关系有点问题，而且没有默认切换黑夜模式的功能，这个问题还有待研究。
+
+
+Artalk 集成
+---------
+
+其实 Ghost 自带评论系统，但是看了下，总体是不太好用的，也需要登录这样的繁琐操作。Artalk 就是以前 Disqus的自建类型的评论系统 （主要原因是Disqus过于臃肿，且基本不太适合中国境内使用。
+
+### Artalk安装
+
+这个的搭建和引入 Ghost 也很简单，直接 docker 启动就行：
+
+```yaml
+version: '3.8'
+services:
+  artalk:
+    container_name: artalk
+    image: artalk/artalk-go
+    restart: unless-stopped
+    ports:
+      - 23366:23366
+    volumes:
+      - ./data:/data
+    environment:
+      - TZ=Asia/Shanghai
+      - ATK_LOCALE=zh-CN
+      - ATK_SITE_DEFAULT=<默认站点名字>
+      - ATK_SITE_URL=<>
+```
+
+
+### 创建管理员
+
+需要注意的是，包括官网也没有说明的一件事，这个东西默认启动是没有管理员账户的，需要手动创建。
+
+一般创建管理员有两种方法：
+
+*   修改配置文件
+*   直接用 CLI 实现。
+
+用 CLI 会省去自己做加密的部分，所以我还是用 cli 实现了。
+
+方法也很简单，进入对应 container，执行下面的命令即可：
+
+```shell
+> artalk admin
+```
+
+
+### 集成到 Ghost
+
+一如既往三件套：
+
+引入 CSS 和 JS:
+
+```html
+  <link href="https://<artalk domain>/dist/Artalk.css" rel="stylesheet"/>
+  <!-- JS -->
+  <script src="https://<artalk domain>/dist/Artalk.js"></script>
+```
+
+
+添加对应容器
+
+```html
+ <div id="Comments"></div>
+```
+
+
+初始化添加到 Footer 里：
+
+```html
+<script>
+    Artalk.init({
+      el: '#Comments',                       // 绑定元素的 Selector
+      pageKey: location.pathname,                         // 固定链接
+      pageTitle: location.pathname,         // 页面标题 (留空自动获取)
+      server: '',  // 后端地址
+      site: '',                    // 你的站点名
+    })
+  </script>
+```
+
+
+All Done.
+
+整体还蛮简单的。
+
+结语
+--
+
+其实林林总总还改了挺多东西的，但是有些东西实在是没法赘述成文章。故此文仅用来记录一些已经做得比较大的改动吧。
+
+之后的计划有: Agolia整合，特效添加等等。

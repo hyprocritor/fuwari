@@ -6,6 +6,7 @@ interface Props {
   class: string
 }
 const className = Astro.props.class
+import 'rehype-callouts/theme/vitepress'
 ---
 <div data-pagefind-body class=`prose dark:prose-invert prose-base !max-w-none custom-md ${className}`>
     <!--<div class="prose dark:prose-invert max-w-none custom-md">-->
@@ -16,12 +17,12 @@ const className = Astro.props.class
 <script>
   const observer = new MutationObserver(addPreCopyButton);
   observer.observe(document.body, { childList: true, subtree: true });
-  
+
   document.addEventListener("DOMContentLoaded", addPreCopyButton);
 
   function addPreCopyButton() {
     observer.disconnect();
-    
+
     let codeBlocks = Array.from(document.querySelectorAll("pre"));
 
     for (let codeBlock of codeBlocks) {
@@ -60,7 +61,7 @@ const className = Astro.props.class
         }, 1000);
       });
     }
-    
+
     observer.observe(document.body, { childList: true, subtree: true });
   }
 </script>

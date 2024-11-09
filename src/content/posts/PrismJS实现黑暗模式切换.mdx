@@ -1,0 +1,239 @@
+---
+title: Prism.JS 实现黑暗模式切换
+published: 2024-10-18
+description: '在 Ghost 中仅使用 CSS 来实现 黑暗模式的切换'
+image: ''
+tags: [PrismJS, Ghost]
+category: '前端'
+draft: false
+---
+
+说明
+--
+
+Prism 的主题部分和做代码分析的部分，实际上是分开。
+
+从文件上看，能简单理解为:
+
+*   JS 部分会负责整理识别各语言，整理并将内部的代码进行分类，打上对应的标签。
+*   CSS部分负责染色
+
+既然染色部分是独立的，那么自然也可以实现黑暗模式的颜色切换了。
+
+⚠️使用 AI 得到的糟糕方案
+----------------
+
+由于并没有修改 Prism 的经验，所以在询问 GPT 后得到了一个令人_匪夷所思_的答案:
+
+``` html
+<link rel="stylesheet" id="prism-theme" href="path/to/prism-light-theme.css">
+
+<script>
+  const darkTheme = 'path/to/prism-dark-theme.css';
+  const lightTheme = 'path/to/prism-light-theme.css';
+
+  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    // 用户偏好 Dark Mode，使用 Dark 主题
+    document.getElementById('prism-theme').setAttribute('href', darkTheme);
+  }
+
+  // 监听系统主题切换事件
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+    const theme = event.matches ? darkTheme : lightTheme;
+    document.getElementById('prism-theme').setAttribute('href', theme);
+  });
+</script>
+```
+
+
+之所以说的上是匪夷所思，是因为这个方案的核心思想，使用不同的 schema，然后监听对应的时间切换，来实现。这个方案看起来实现倒是简单，但是小问题非常多：
+
+*   每次进行切换的时候，由于时间的延后，以及需要重新加载 CSS，所以代码框的绘制永远是延后的。
+*   这个方案默认是监听`prefers-color-schema`这个系统事件的，对于一些通过修改 html 属性的手动切换，代码的侵入性实在是过大。
+
+这个方案，在最后不得不废弃。
+
+重写 CSS
+------
+
+尽管这个说起来十分简单，但是不知道为什么，在网上并没有找到现成可以用的相关代码（可能大家都没兴趣？）
+
+在多方查阅后，某个 Codepen 提供的代码改动给了我一些启发。并完成了如下的内容：
+
+``` css
+/* PrismJS - used for code highlighting */
+
+[class*="language-"] ::selection {
+  color: #000;
+  text-shadow: none;
+}
+
+.token.important,
+.token.bold {
+  font-weight: bold;
+}
+.token.italic {
+  font-style: italic;
+}
+.token.entity {
+  cursor: help;
+}
+.namespace {
+  opacity: 0.7;
+}
+
+/* Default colors (Light mode) */
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+  --color: #33a;
+  --textShadow: #fff;
+  --comment: #6e6e6e;
+  --punctuation: #4e4e4e;
+  --property: #905;
+  --operator: #70b;
+  --selector: #487b00;
+  --url: #8d6640;
+  --urlBg: hsla(0, 0%, 100%, .5);
+  --boolean: #905;
+  --atrule: #0075a8;
+  --keyword: #0075a8;
+  --function: #c93654;
+  --regex: #860;
+  --boxShadow: hsla(0,0%,0%,.3);
+  --prism-background: #f5f2f0;
+
+}
+
+
+/* If the OS has dark mode set then... */
+/* Change dark to light to test */
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) code[class*="language-"]:not([contenteditable]),
+  html:not([data-theme="light"]) pre[class*="language-"] {
+    --color: #6ae;
+    --textShadow: #000;
+    --comment: #9ab;
+    --punctuation: #999;
+    --property: #e70;
+    --operator: #d7f;
+    --selector: #8b2;
+    --url: #cde;
+    --urlBg: rgba(0,0,0,.5);
+    --boolean: #a8f;
+    --atrule: #f00;
+    --keyword: #f00;
+    --function: #f55;
+    --regex: #f91;
+
+    --boxShadow: #000;
+    --prism-background: #f5f2f0;
+  }
+}
+
+
+/* Manual switch mode - where implemented */
+html[data-theme="dark"] code[class*="language-"]:not([contenteditable]),
+html[data-theme="dark"] pre[class*="language-"] {
+
+  /* Exactly the same as prefers-color-scheme: dark */
+  --color: #6ae;
+  --textShadow: #000;
+  --comment: #9ab;
+  --punctuation: #999;
+  --property: #e70;
+  --operator: #d7f;
+  --selector: #8b2;
+  --url: #cde;
+  --urlBg: rgba(0,0,0,.5);
+  --boolean: #8af;
+  --atrule: #ffb;
+  --keyword: #fe6;
+  --function: #f55;
+  --regex: #f91;
+  --prism-background: #2a2a2a;
+  --boxShadow: #000;
+
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: var(--comment);
+}
+.token.punctuation {
+  color: var(--punctuation);
+}
+.token.property,
+.token.symbol,
+.token.tag,
+.token.constant,
+.token.deleted {
+  color: var(--property);
+}
+.token.boolean,
+.token.number {
+  color: var(--boolean);
+}
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+  color: var(--selector);
+}
+.token.operator {
+  color: var(--operator);
+}
+.token.url,
+.token.entity,
+.language-css .token.string,
+.style .token.string {
+  color: var(--url);
+  background-color: var(--urlBg);
+}
+.token.atrule,
+.token.attr-value {
+  color: var(--atrule);
+}
+.token.keyword {
+  color: var(--keyword);
+}
+.token.function {
+  color: var(--function);
+}
+.token.regex,
+.token.important,
+.token.variable {
+  color: var(--regex);
+}
+:not(pre) > code {
+  background: #f5f2f0;
+  padding: 2px 0;
+}
+html[data-theme="dark"] :not(pre) > code {
+  background-color: #2a2a2a;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+  background: var(--prism-background);
+}
+
+
+@media print {
+  code[class*="language-"],
+  pre[class*="language-"] {
+    text-shadow: none;
+
+  }
+}
+
+```
+
+
+这段代码主要还是通过声明具体的 class 的颜色为CSS变量来实现的。通过监听html 标签中`data-theme`属性是否为`dark`来判断当前使用的主题颜色。
+
+这个方案是本站目前正在使用的方案，相比重新加载 CSS 会有更好的性能和显示效果。

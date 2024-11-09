@@ -1,0 +1,146 @@
+---
+title: Astro Fuwari主题添加评论功能
+published: 2024-11-09
+description: '为缺失评论功能的 Fuwari 主题添加评论功能，同样也适用于那些使用了 SWUP 的 Astro 主题。'
+image: ''
+tags: [Astro, 主题, Artalk]
+category: '前端'
+draft: false
+---
+
+## 总述
+Astro 作为一个相对 Hexo 和 Hugo 这种框架，整体技术比较新，且上手难度比较大的框架而言，目前能用的优秀主题并不是很多。
+而 Fuwari 是目前做得比较好的一个。
+
+而关键的评论功能，虽然作者将其列入了自己的 To-Do 列表，但是可能也是考虑到诸多原因，而没有在其中添加相应代码。
+这篇文章则针对这个部分进行添加。
+
+----
+
+## 现有问题
+Fuwari 作为一个使用比较多动效的网站而言，也是支持的 View Transition 这个 API。
+
+ViewTransition 这个 API 可以在页面间移动的时候，仅仅只更新 DOM，而无需进行页面的重新加载。
+同时，这个 API 还支持制作多个页面间过渡的动画，让 MPA 程序实现类似原生系统的切换效果，仿佛是在使用 SPA 的应用一样。
+Astro 这个框架，则原生的支持了这个功能，开发者可以在**无需引入任何第三方库或 JS**的情况下，实现页面切换。
+仅仅使用 `<ViewTransition/>` 这个组件即可实现整个页面的替换。[文档](https://docs.astro.build/en/tutorials/add-view-transitions/#update-scripts)
+
+
+
+
+### ViewTransition 带来的问题
+这个 View Transition好虽好，但是也有一些别的问题，而其中最严重的一点是：**JS 只能执行一次**。
+由于页面并没有真的重新加载，而仅仅是替换，所以切换到新页面的 JS 内容将不会被执行.
+而与此同时失效的还有`domcontentloaded`这个事件。
+
+对此， Astro 提供了一种[处理方法](https://docs.astro.build/en/tutorials/add-view-transitions/#update-scripts)，或者说 WorkAround， 即`page-load`事件：
+
+```javascript
+document.addEventListener('astro:page-load', () => {
+  document.querySelector('.hamburger').addEventListener('click', () => {
+    document.querySelector('.nav-links').classList.toggle('expanded');
+  });
+});
+```
+这个事件的行为逻辑就是个简单的回调函数，在 Astro 完成 View Transition 后主动进行调取。
+而且，这段代码必须在**页面第一次加载**就要被调用，在之后的 Transition 则与其他的 JS 内容一样，无法进行执行。
+
+### 评论系统的设计
+
+现在几乎所有的评论系统都有着一样的行为逻辑。即页面找一个对应元素，然后执行 JS。
+比如 Artalk，则需要使用下面的初始化代码：
+
+```javascript
+Artalk.init({
+  el:        document.querySelector('#Comments'), // 挂载的 DOM 元素
+  pageKey:   '/post/1',                           // 固定链接
+  pageTitle: '关于引入 Artalk 的这档子事',           // 页面标题
+  server:    'http://artalk.example.com:8080',    // 后端地址
+  site:      'Artalk 的博客',                      // 站点名
+})
+```
+因为只有文章页面有 ID 为 `Comments` 的元素，所以这段代码必须在文章页面执行。
+
+### Astro 的方法
+所以，Astro 的方法，其实很简单，就是单纯的在页面添加一个事件监听就解决了。
+
+
+
+## Fuwari 不一样。
+但是，Fuwari其并没有使用Astro 自带的 `ViewTransition` 接口，而是使用了**SWUP**这个库来进行的实现。
+
+::github{repo="swup/swup"}
+
+相比于 Astro 的 View Transition 方法而言，单纯的加监听没有解决任何问题。
+
+SWUP 的官方在其对 Astro 的集成中，提供了一个名为 `reloadScript` 的参数。
+尽管这个参数可能会带来很多别的问题，比如内存泄露这种，但是不管怎么将应该问题算解决了？对吧？
+
+**并没有！！！**
+
+即便使用这个函数，初始化代码仍然没有被执行 （原因我也没找到）。
+
+### SWUP‘s Workaround
+与 Astro 一样，SWUP 提供了一个绕过方法，Hooks。
+
+与 React 的 Hooks 不同，SWUP 的 Hooks 的本质就是事件监听……
+
+所以我们可以用类似的方法来实现，比如使用以下的方法来搞：
+
+```javascript
+ window.swup.hooks.on('page:view', () => {
+            initArtalk()
+        });
+```
+
+### 但是 Astro 他……
+
+如果这是个标准的网站，我觉得这个问题可能已经得到的妥善的解决。
+但是这里有 Astro。在页面初始化的时候，Astro 很有可能还并没有将 JS 加载到本地，贸然调用会出现导致 SWUP 根本不存在。
+所以，需要按照SWUP 的存在与否来决定是否初始化评论组件。
+也就是监听：`swup:enable` 这个事件。
+```javascript
+document.addEventListener("swup:enable", setup)
+````
+
+与此同时，我们应该同时判断，Comments 元素的存在与否来避免在错误页面初始化评论区，
+且应该在 SWUP 没有加载的时候将对应的函数放到 SWUP 的钩子中。
+
+
+## TL;DR 的大结局
+所以一切的一切，只需要在 Layout.Astro添加下面的内容即可。
+
+（这个文件永远会在页面第一次被加载时执行）
+```html
+<script>
+    import Artalk from "artalk";
+    import {siteConfig} from "../config";
+
+    function initArtalk() {
+        let artalkDataNode = document.getElementById("artalk-data");
+        if (artalkDataNode) {
+            Artalk.init({
+                el: document.querySelector('#artalk'), // 挂载的 DOM 元素
+                pageKey: artalkDataNode.getAttribute("artalk-slug"),                           // 固定链接
+                pageTitle: artalkDataNode.getAttribute("artalk-title"),           // 页面标题
+                server: siteConfig.comments.backendURL,    // 后端地址
+                site: siteConfig.title,                      // 站点名
+            })
+        }
+    }
+
+    function setup() {
+        initArtalk()
+        window.swup.hooks.on('page:view', () => {
+            initArtalk()
+        });
+
+    }
+    if (window.swup) {
+        setup()
+    } else {
+        document.addEventListener("swup:enable", setup)
+    }
+</script>
+```
+

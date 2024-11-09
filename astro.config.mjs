@@ -19,6 +19,7 @@ import { parseDirectiveNode } from './src/plugins/remark-directive-rehype.js'
 import { remarkExcerpt } from './src/plugins/remark-excerpt.js'
 import { remarkReadingTime } from './src/plugins/remark-reading-time.mjs'
 import mdx from "@astrojs/mdx";
+import rehypeCallouts from "rehype-callouts";
 
 const oklchToHex = str => {
   const DEFAULT_HUE = 250
@@ -72,6 +73,7 @@ export default defineConfig({
           parseDirectiveNode,
         ],
         rehypePlugins: [
+          rehypeCallouts,
           rehypeKatex,
           rehypeSlug,
           [
