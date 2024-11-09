@@ -113,7 +113,7 @@ const jsonLd = {
                              class="mb-6 rounded-xl license-container onload-animation"></License>}
             {siteConfig.comments.enable &&
                     <hr class="mb-5 bg-black"/>
-                    <div artalk-slug={entry.slug} artalk-title={entry.data.title} id="artalk-data"></div>
+                    <div artalk-slug={entry.slug} artalk-title={entry.data.title} id="artalk-data" artalk-site={siteConfig.title} artalk-backend={siteConfig.comments.backendURL} ></div>
                     <div id="artalk"/>
             }
 

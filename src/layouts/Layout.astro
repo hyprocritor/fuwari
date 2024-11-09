@@ -570,17 +570,15 @@ const commentsConfig = siteConfig.comments
 
 <script>
     import Artalk from "artalk";
-    import {siteConfig} from "../config";
-    import * as console from "node:console";
     function initArtalk() {
         let artalkDataNode = document.getElementById("artalk-data");
         if (artalkDataNode) {
             Artalk.init({
                 el: document.querySelector('#artalk'), // 挂载的 DOM 元素
-                pageKey: artalkDataNode.getAttribute("artalk-slug"),                           // 固定链接
-                pageTitle: artalkDataNode.getAttribute("artalk-title"),           // 页面标题
-                server: siteConfig.comments.backendURL,    // 后端地址
-                site: siteConfig.title,                      // 站点名
+                pageKey: artalkDataNode.getAttribute("artalk-slug") as string,                           // 固定链接
+                pageTitle: artalkDataNode.getAttribute("artalk-title") as string ,           // 页面标题
+                server: artalkDataNode.getAttribute("artalk-backend") as string,    // 后端地址
+                site: artalkDataNode.getAttribute("artalk-site") as string,                      // 站点名
             })
         }
     }
@@ -592,6 +590,7 @@ const commentsConfig = siteConfig.comments
         });
 
     }
+
     if (window.swup) {
         setup()
     } else {

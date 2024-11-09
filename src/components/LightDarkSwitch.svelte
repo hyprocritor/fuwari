@@ -34,7 +34,6 @@
     function switchScheme(newMode: LIGHT_DARK_MODE) {
         mode = newMode
         setTheme(newMode)
-        artalk.setDarkMode(newMode === 'dark')
     }
 
     function toggleScheme() {
