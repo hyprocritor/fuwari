@@ -16,7 +16,7 @@ export const siteConfig: SiteConfig = {
   },
   comments: {
     enable: true,
-    backendURL: 'https://comments.23h.at/'
+    backendURL: 'https://talk.23h.at/'
   },
   banner: {
     enable: true,
