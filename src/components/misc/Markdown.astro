@@ -467,7 +467,8 @@ import 'rehype-callouts/theme/vitepress'
     display: flex;
     width: 100%;
     max-width: 800px;
-    height: 150px;
+    max-height: 150px;
+    min-height: 120px;
     background: var(--license-block-bg)
     border-radius: .5rem;
     margin-bottom: 1rem;
@@ -489,6 +490,7 @@ import 'rehype-callouts/theme/vitepress'
         overflow: hidden
         text-overflow: ellipsis
         white-space: nowrap;
+        color: var(--inline-code-color)
         text-wrap: wrap
         display: -webkit-box;
         -webkit-line-clamp: 2;
@@ -497,7 +499,7 @@ import 'rehype-callouts/theme/vitepress'
       & .rlc-description
         font-size: 0.8em;
         flex-grow: 1
-        color: var(--deep-text);
+        color: gray;
         overflow: hidden;
         white-space: nowrap;
         text-wrap: wrap
@@ -508,7 +510,7 @@ import 'rehype-callouts/theme/vitepress'
 
       & .rlc-url-container
         font-size: .7em;
-        color: var(--deep-text);
+        color: gray;
         display: flex;
         align-items: center;
         & .rlc-favicon
