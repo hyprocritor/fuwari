@@ -565,16 +565,34 @@ const commentsConfig = siteConfig.comments
     }
 
 </script>
-<script is:inline defer src="https://analytics.23h.at/script.js" data-website-id="2ca46457-c766-4a7a-8351-6f5ba584e39a"></script>
+<script is:inline defer src="https://analytics.23h.at/script.js"
+        data-website-id="2ca46457-c766-4a7a-8351-6f5ba584e39a"></script>
+<script>
+
+    function setup() {
+        window.swup.hooks.on('page:view', () => {
+            //The following umami content exist in external lib
+            //@ts-ignore
+            void window.umami.track((props) => ({ ...props }));
+        });
+    }
+
+    if (window.swup) {
+        setup()
+    } else {
+        document.addEventListener("swup:enable", setup)
+    }
+</script>
 <script>
     import Artalk from "artalk";
+
     function initArtalk() {
         let artalkDataNode = document.getElementById("artalk-data");
         if (artalkDataNode) {
             Artalk.init({
                 el: document.querySelector('#artalk'), // 挂载的 DOM 元素
                 pageKey: artalkDataNode.getAttribute("artalk-slug") as string,                           // 固定链接
-                pageTitle: artalkDataNode.getAttribute("artalk-title") as string ,           // 页面标题
+                pageTitle: artalkDataNode.getAttribute("artalk-title") as string,           // 页面标题
                 server: artalkDataNode.getAttribute("artalk-backend") as string,    // 后端地址
                 site: artalkDataNode.getAttribute("artalk-site") as string,                      // 站点名
             })
