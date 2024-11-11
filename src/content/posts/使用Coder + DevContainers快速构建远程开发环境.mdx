@@ -1,0 +1,191 @@
+---
+title: 使用Coder + DevContainers快速构建远程开发环境
+published: 2024-11-11
+description: '本文主要介绍 Coder 的相关安装使用配置，来达到一个自建 GitHub CodeSpace 的功能。同时，会使用 DevContainer 来进行开发环境的配置。'
+image: ''
+tags: [Coder, Docker, 开发, DevContainer]
+category: 'DevOps'
+draft: false
+---
+
+## 序言
+最近几天在努力试用 Github CodeSpace，这个东西基本可以覆盖一些远程开发的需求。
+但是既然是云服务，自然而然的有着各种各样的限制，而其中一个绕不开的就是价格。具体的价格可以查看下面的网页：
+
+https://docs.github.com/en/billing/managing-billing-for-your-products/managing-billing-for-github-codespaces/about-billing-for-github-codespaces
+
+总的来说，每个月有 120 个计算时长。其中，每个 CPU 每运行一小时算一个计算时长。
+
+对于免费用户来讲，最低配置（2 核 4G 内存)一个月满打满算大约能有 60 个小时的最低配置服务器。
+
+当然，对于大部分人这个目前也算是比较够用的了。
+
+但是 CodeSpace 终归是依赖于云服务的，且是国外的服务，国内访问性能谈不上优秀（特别是还有各种防火墙）。
+
+所以，利用家里的 NAS 或者自己的服务器自建一个类似的开发环境是个很好的选择。
+
+## 自建 CodeSpace 的选择
+市面上能用的选择其实比想象中的更少。
+
+| 特性        | Coder | GitPod | DevPod |
+|-----------|-------|--------|--------|
+| 本地部署      | ✅     | ✅      | ✅      |
+| 开源        | ✅     | ✅      | ✅      |
+| 服务端部署     | ✅     | ✅      | ❌      |
+| 支持 Docker | ✅     | ❌      | ✅      |
+
+所以，最后 Coder 几乎成了自建 CodeSpace-link 的不二之选。
+
+但是，开源版的 Coder 仍然有以下缺点：
+* 仅支持一个 Git External Account
+* Terraform 相当繁杂且难以理解使用
+
+## 部署 Coder
+Coder 本身只是个管理程序，具体的业务实际上 Coder 是不管的。
+我们常规的部署方法就是 Docker 启动，而无需专门搞一个服务器部署。
+
+启动的配置文件可以参考以下内容：
+
+```yaml
+version: '3.8'
+
+services:
+  coder:
+    # This MUST be stable for our documentation and
+    # other automations.
+    image: ghcr.io/coder/coder:${CODER_VERSION:-latest}
+    ports:
+      - "7080:7080"
+    environment:
+      CODER_PG_CONNECTION_URL: "postgresql://username:password@host/database?sslmode=disable"
+      CODER_HTTP_ADDRESS: "0.0.0.0:7080"
+      CODER_ACCESS_URL: "<>"
+      CODER_WILDCARD_ACCESS_URL: "*.your.domain"
+      CODER_EXTERNAL_AUTH_0_ID: "github"
+      CODER_EXTERNAL_AUTH_0_TYPE: github
+      CODER_EXTERNAL_AUTH_0_CLIENT_ID: <你的 Github Oauth APP ID>
+      CODER_EXTERNAL_AUTH_0_CLIENT_SECRET: <<你的 Github Oauth APP Secret>
+    group_add:
+      - "988" # docker group on host
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+```
+这里有几个参数需要额外注意下：
+* `CODER_ACCESS_URL`: 这个是 你的 Coder 访问用域名。
+* `CODER_WILDCARD_ACCESS_URL`: 如果你使用 Cloudflare 进行代理加速，那么需要域名符合 `*.example.com` 这个模式。使用 `*.coder.example.com`这个模式会导致 Cloudflare 无法签发 SSL 证书，需要额外交钱。
+    * 这个域名可以和 `CODER_ACCESS_URL` 不在一个域名下。
+* `group_add` 和 `volumes`： 这两个参数主要用于解决 Coder 与 Docker 通信的问题（如果是有部署Coder 的机子作为容器机器的情况）。
+* `CODER_EXTERNAL_AUTH_0_*`；这个需要自己去 Github 申请一个 Github APP。具体权限配置要求如下表[^1]：
+
+| Name           | Permission    | Description                                          |
+|----------------|---------------|------------------------------------------------------|
+| Contents	      | Read & Write	 | Grants access to code and commit statuses.           |
+| Pull requests	 | Read & Write	 | Grants access to create and update pull requests.    |
+| Workflows	     | Read & Write	 | Grants access to update files in .github/workflows/. |
+| Metadata	      | Read-only	    | Grants access to metadata written by GitHub Apps.    |
+| Members	       | Read-only	    | Grants access to organization members and teams.     |
+
+
+[^1]: 参考自官方的指南：https://coder.com/docs/admin/external-auth#github
+
+
+## 配置 Template
+Coder 主要的构建方法是使用 [terraform](https://www.terraform.io/) 来进行具体环境的构建。简单的描述即为，根据用户的声明，来决定如何构建一个完整 Ops 环境。
+
+对于绝大多数开发者而言，可以直接考虑使用 Coder 官方提供的模板，而仅需在自己进行扩展时进行修改 Template。
+
+通常情况下，选择下面的模板启动项目即可：
+![Dev Container选择示例](https://img.23h.at/i/2024/11/11/ih5l0p.webp)
+
+### 扩展 Template
+由于 Coder 使用了 Terraform 来进行构建，则我们可以在这个基础上进行一些拓展，比如，我的配置文件就加入了下面的内容来自动化配置 Github Token，和添加了 Jetbrains 系列 IDE 的支持：
+
+```hcl
+module "github-upload-public-key" {
+  source   = "registry.coder.com/modules/github-upload-public-key/coder"
+  version  = "1.0.15"
+  agent_id = coder_agent.main.id
+}
+
+module "jetbrains_gateway" {
+  source         = "registry.coder.com/modules/jetbrains-gateway/coder"
+  version        = "1.0.23"
+  agent_id       = coder_agent.main.id
+  agent_name     = "main"
+  folder         = "/workspaces"
+  jetbrains_ides = ["CL", "GO", "IU", "PY", "WS"]
+  default        = "WS"
+}
+
+module "vscode-web" {
+  source         = "registry.coder.com/modules/vscode-web/coder"
+  version        = "1.0.22"
+  agent_id       = coder_agent.main.id
+  accept_license = true
+}
+```
+
+Coder 官方提供了一些官方的扩展，可以参考并按需添加: [Coder Registry](https://registry.coder.com/modules)
+
+
+## 配置DevContainer
+
+DevContainer 对程序开发最大的优势即为对单个项目标准化了整个项目开发环境，而不用因个体开发设备的不同而单独配置环境。
+
+Github 的官方文档其实有关于该功能比较详细的叙述：
+
+https://docs.github.com/zh/codespaces/setting-up-your-project-for-codespaces/adding-a-dev-container-configuration/introduction-to-dev-containers
+
+总结下来就是，配置文件生成具体的开发环境。
+
+为了启用 DevContainer，开发者需要在项目的 Repo 中添加 名为`.devcontainer/devcontainer.json`。一份案例配置可以参考如下内容：
+
+```jsonc
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/typescript-node
+{
+    //环境的名称
+  "name": "Neon Develop Env",
+  // 如何创建 Docker 镜像。
+ //微软官方也提供了一些模版配置:https://containers.dev/templates
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
+  //按照template 启用一些相关的 feature，如下文则启用了 node js。
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {}
+  },
+
+  // 容器内部端口通常不可直接访问，需要进行端口转发。下面的配置不是必须的，通常我们也会使用 Coder 自带的配置进行端口转发。
+  "forwardPorts": [
+    4321
+  ],
+  "workspaceFolder": "/workspace/neon"
+}
+```
+
+但是与 Github CodeSpace 稍有不同的是，Coder 使用的是自己的一套组件来进行环境构建：
+
+::github{repo=coder/envbuilder}
+
+但是这点差异，目前看多数个人项目不会构成显著区别。
+
+
+## 启动项目
+
+由于之前已经完成了项目的配置，启动整个项目只需要点几下按钮即可:
+
+![选择 DevContainer](https://img.23h.at/i/2024/11/11/iwn9yx.webp)
+
+![启动的项目环境](https://img.23h.at/i/2024/11/11/iwn7k9.webp)
+
+之后便可以点击 VS Code 通过 VS Code 进行开发，或者直接使用 Code-Server / VS Code Web 进行在线开发。
+
+当然，如果需要 VSCode 安装有额外的插件，也可以通过配置文件进行配置，来达到自动安装插件的目的。
+
+## 总结
+Coder 对很多有远程开发需求的开发者其实提供了一个比较好的入口。
+
+整体的使用难度仍在接受范围内，适合很多开发者装在自己的开发机上来远程开发。
+
+当然，免费版本的 Coder 仍然有诸多限制，比如SSO支持，只能使用一个 Git 外部账号，使用其他的 Git 链接就会比较困难等等。
+
+但是目前来看，在有新产品出现前，Coder已经是个人远程开发的一个比较好的选择。

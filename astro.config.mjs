@@ -21,6 +21,7 @@ import {remarkReadingTime} from './src/plugins/remark-reading-time.mjs'
 import mdx from "@astrojs/mdx";
 import rehypeCallouts from "rehype-callouts";
 import remarkLinkCard from 'remark-link-card'
+import {defaultFootnoteBackContent} from "./src/plugins/remarkRehypeFootnoteBackContent.mjs";
 
 const oklchToHex = str => {
     const DEFAULT_HUE = 250
@@ -65,6 +66,11 @@ export default defineConfig({
         svelte(),
         sitemap(),
         mdx({
+            remarkRehype: {
+                footnoteLabel:"注释",
+                footnoteBackContent:defaultFootnoteBackContent
+
+            },
             remarkPlugins: [
                 remarkMath,
                 remarkReadingTime,
@@ -116,6 +122,9 @@ export default defineConfig({
                 ],
 
             ],
+            optimize:true,
+
+
         }),
         Compress({
             CSS: true,
