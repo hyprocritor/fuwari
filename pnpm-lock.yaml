@@ -39,12 +39,18 @@ importers:
       '@swup/astro':
         specifier: ^1.4.1
         version: 1.4.1(@types/babel__core@7.20.5)
+      '@swup/ga-plugin':
+        specifier: ^2.0.0
+        version: 2.0.0(@types/babel__core@7.20.5)(swup@4.8.1)
       artalk:
         specifier: ^2.9.1
         version: 2.9.1(marked@14.1.4)
       astro:
         specifier: ^4.15.9
         version: 4.16.7(@types/node@22.8.1)(lightningcss@1.27.0)(rollup@2.79.2)(sass@1.80.4)(stylus@0.63.0)(terser@5.36.0)(typescript@5.6.3)
+      astro-analytics:
+        specifier: ^2.7.0
+        version: 2.7.0
       astro-compress:
         specifier: ^2.3.1
         version: 2.3.5(@types/node@22.8.1)(rollup@2.79.2)(sass@1.80.4)(stylus@0.63.0)(typescript@5.6.3)
@@ -1724,6 +1730,11 @@ packages:
     peerDependencies:
       swup: ^4.6.0
 
+  '@swup/ga-plugin@2.0.0':
+    resolution: {integrity: sha512-1ZPqEmxKW+JvJIh77EEc8LOtqnKvRYeyMEaudPC9PHfyd5QioEgbIAJS7rNzNP3Mx6WlbV5wSTB5krtr8beWrA==}
+    peerDependencies:
+      swup: ^4.0.0
+
   '@swup/head-plugin@2.3.0':
     resolution: {integrity: sha512-QWsv1w8s3KYjkB5WQ6OofVAJrbuRZcXbCGGZJT8qjzELgaeJ+HpdSB6oZ0FhW2VbAW2r0ywexGsynGrcf8mfwg==}
     peerDependencies:
@@ -2034,6 +2045,9 @@ packages:
   astring@1.9.0:
     resolution: {integrity: sha512-LElXdjswlqjWrPpJFg1Fx4wpkOCxj1TDHlSV4PlaRxHGWko024xICaa97ZkMfs6DRKlCguiAI+rbXv5GWwXIkg==}
     hasBin: true
+
+  astro-analytics@2.7.0:
+    resolution: {integrity: sha512-/qctBn7LF9DS3ff2YYFrYtCkLLw2fboPDJUgg3HErygGbEBvebW/eGRftZH4ykDJhlCvwTsSEKz/vff7WllyAw==}
 
   astro-compress@2.3.5:
     resolution: {integrity: sha512-TWZr/7IbIyi5e4vjuVN8UgkKMOhFqH25466Ct1jIG9UoDz50uNP5iPFQ2zPqO/Oe2541kYU7CchZt7cJ32w0Wg==}
@@ -7098,6 +7112,15 @@ snapshots:
       '@swup/plugin': 4.0.0
       swup: 4.8.1
 
+  '@swup/ga-plugin@2.0.0(@types/babel__core@7.20.5)(swup@4.8.1)':
+    dependencies:
+      '@swup/plugin': 3.0.1(@types/babel__core@7.20.5)
+      swup: 4.8.1
+    transitivePeerDependencies:
+      - '@types/babel__core'
+      - supports-color
+      - ts-node
+
   '@swup/head-plugin@2.3.0(swup@4.8.1)':
     dependencies:
       '@swup/plugin': 4.0.0
@@ -7462,6 +7485,8 @@ snapshots:
       printable-characters: 1.0.42
 
   astring@1.9.0: {}
+
+  astro-analytics@2.7.0: {}
 
   astro-compress@2.3.5(@types/node@22.8.1)(rollup@2.79.2)(sass@1.80.4)(stylus@0.63.0)(typescript@5.6.3):
     dependencies:

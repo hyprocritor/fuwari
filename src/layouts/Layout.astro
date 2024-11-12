@@ -501,6 +501,27 @@ const commentsConfig = siteConfig.comments
     }
 
 </script>
+<script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-X9X4L2G40D"></script>
+<script is:inline>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-X9X4L2G40D');
+</script>
+<script>
+    import SwupGaPlugin from '@swup/ga-plugin';
+    if (window.swup){
+        const setup = () => {
+            window.swup.use(new SwupGaPlugin({gaMeasurementId:'G-X9X4L2G40D'}))
+            window.swup.hooks.on('page:view', () => {})
+        }
+        if (window.swup) {
+            setup()
+        } else {
+            document.addEventListener('swup:enable', setup)
+        }
+    }
+</script>
 
 <script>
     import PhotoSwipeLightbox from "photoswipe/lightbox"
@@ -565,24 +586,12 @@ const commentsConfig = siteConfig.comments
     }
 
 </script>
-<script is:inline defer src="https://analytics.23h.at/script.js"
-        data-website-id="2ca46457-c766-4a7a-8351-6f5ba584e39a"></script>
 <script>
 
-    function setup() {
-        window.swup.hooks.on('page:view', () => {
-            //The following umami content exist in external lib
-            //@ts-ignore
-            void window.umami.track((props) => ({ ...props }));
-        });
-    }
-
-    if (window.swup) {
-        setup()
-    } else {
-        document.addEventListener("swup:enable", setup)
-    }
 </script>
+
+
+
 <script>
     import Artalk from "artalk";
 
