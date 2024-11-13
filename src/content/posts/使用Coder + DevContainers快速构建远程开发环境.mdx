@@ -46,7 +46,7 @@ Coder 本身只是个管理程序，具体的业务实际上 Coder 是不管的�
 
 启动的配置文件可以参考以下内容：
 
-```yaml
+```yaml title=docker-compose.yaml wrap
 version: '3.8'
 
 services:
@@ -100,7 +100,7 @@ Coder 主要的构建方法是使用 [terraform](https://www.terraform.io/) 来�
 ### 扩展 Template
 由于 Coder 使用了 Terraform 来进行构建，则我们可以在这个基础上进行一些拓展，比如，我的配置文件就加入了下面的内容来自动化配置 Github Token，和添加了 Jetbrains 系列 IDE 的支持：
 
-```hcl
+```hcl title=template wrap
 module "github-upload-public-key" {
   source   = "registry.coder.com/modules/github-upload-public-key/coder"
   version  = "1.0.15"
@@ -140,7 +140,7 @@ https://docs.github.com/zh/codespaces/setting-up-your-project-for-codespaces/add
 
 为了启用 DevContainer，开发者需要在项目的 Repo 中添加 名为`.devcontainer/devcontainer.json`。一份案例配置可以参考如下内容：
 
-```jsonc
+```jsonc title=.devcontainer.json  wrap
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/typescript-node
 {

@@ -7,10 +7,10 @@ import icon from 'astro-icon'
 import {defineConfig} from 'astro/config'
 import Color from 'colorjs.io'
 import rehypeAutolinkHeadings from 'rehype-autolink-headings'
-import rehypeComponents from 'rehype-components' /* Render the custom directive content */
+import rehypeComponents from 'rehype-components'/* Render the custom directive content */
 import rehypeKatex from 'rehype-katex'
 import rehypeSlug from 'rehype-slug'
-import remarkDirective from 'remark-directive' /* Handle directives */
+import remarkDirective from 'remark-directive'/* Handle directives */
 import remarkGithubAdmonitionsToDirectives from 'remark-github-admonitions-to-directives'
 import remarkMath from 'remark-math'
 import {AdmonitionComponent} from './src/plugins/rehype-component-admonition.mjs'
@@ -22,6 +22,8 @@ import mdx from "@astrojs/mdx";
 import rehypeCallouts from "rehype-callouts";
 import remarkLinkCard from 'remark-link-card'
 import {defaultFootnoteBackContent} from "./src/plugins/remarkRehypeFootnoteBackContent.mjs";
+import { pluginLineNumbers } from '@expressive-code/plugin-line-numbers'
+import expressiveCode from 'astro-expressive-code';
 
 const oklchToHex = str => {
     const DEFAULT_HUE = 250
@@ -39,102 +41,109 @@ export default defineConfig({
     base: '/',
     trailingSlash: 'always',
     integrations: [
-        tailwind(),
-        swup({
-            theme: false,
-            animationClass: 'transition-swup-',   // see https://swup.js.org/options/#animationselector
-                                                  // the default value `transition-` cause transition delay
-                                                  // when the Tailwind class `transition-all` is used
-            containers: ['main', '#toc'],
-            smoothScrolling: true,
-            cache: true,
-            preload: true,
-            progress: true,
-            accessibility: true,
-            updateHead: true,
-            updateBodyClass: false,
-            globalInstance: true,
-        }),
-        icon({
-            include: {
-                'material-symbols': ['*'],
-                'fa6-brands': ['*'],
-                'fa6-regular': ['*'],
-                'fa6-solid': ['*'],
+
+        tailwind(), swup({
+        theme: false,
+        animationClass: 'transition-swup-',   // see https://swup.js.org/options/#animationselector
+                                              // the default value `transition-` cause transition delay
+                                              // when the Tailwind class `transition-all` is used
+        containers: ['main', '#toc'],
+        smoothScrolling: true,
+        cache: true,
+        preload: true,
+        progress: true,
+        accessibility: true,
+        updateHead: true,
+        updateBodyClass: false,
+        globalInstance: true,
+    }), icon({
+        include: {
+            'material-symbols': ['*'],
+            'fa6-brands': ['*'],
+            'fa6-regular': ['*'],
+            'fa6-solid': ['*'],
+        },
+    }),svelte(), sitemap(),
+        expressiveCode({
+            defaultLocale: 'zh-CN',
+            defaultProps:{
+              wrap:true,
+            },
+            plugins:[pluginLineNumbers()],
+            themes: ['slack-ochin', 'slack-dark'],
+            frames: {
+                extractFileNameFromCode:true,
+                showCopyToClipboardButton:true
             },
         }),
-        svelte(),
-        sitemap(),
         mdx({
-            remarkRehype: {
-                footnoteLabel:"注释",
-                footnoteBackContent:defaultFootnoteBackContent
+        remarkRehype: {
+            footnoteLabel:"注释",
+            footnoteBackContent:defaultFootnoteBackContent
 
-            },
-            remarkPlugins: [
-                remarkMath,
-                remarkReadingTime,
-                remarkExcerpt,
-                remarkGithubAdmonitionsToDirectives,
-                remarkLinkCard,
-                remarkDirective,
-                parseDirectiveNode,
-            ],
-            rehypePlugins: [
-                rehypeCallouts,
-                rehypeKatex,
-                rehypeSlug,
-                [
-                    rehypeComponents,
-                    {
-                        components: {
-                            github: GithubCardComponent,
-                            note: (x, y) => AdmonitionComponent(x, y, 'note'),
-                            tip: (x, y) => AdmonitionComponent(x, y, 'tip'),
-                            important: (x, y) => AdmonitionComponent(x, y, 'important'),
-                            caution: (x, y) => AdmonitionComponent(x, y, 'caution'),
-                            warning: (x, y) => AdmonitionComponent(x, y, 'warning'),
-                        },
-                    },
-                ],
-                [
-                    rehypeAutolinkHeadings,
-                    {
-                        behavior: 'append',
-                        properties: {
-                            className: ['anchor'],
-                        },
-                        content: {
-                            type: 'element',
-                            tagName: 'span',
-                            properties: {
-                                className: ['anchor-icon'],
-                                'data-pagefind-ignore': true,
-                            },
-                            children: [
-                                {
-                                    type: 'text',
-                                    value: '#',
-                                },
-                            ],
-                        },
-                    },
-                ],
-
-            ],
-            optimize:true,
+        },
+        optimize:false,
 
 
-        }),
-        Compress({
-            CSS: true,
-            Image: true,
-            Action: {
-                Passed: async () => true, // https://github.com/PlayForm/Compress/issues/376
-            },
-        }),
-    ],
+    }), Compress({
+        CSS: true,
+        Image: true,
+        Action: {
+            Passed: async () => true, // https://github.com/PlayForm/Compress/issues/376
+        },
+    })],
     markdown: {
+        remarkPlugins: [
+            remarkMath,
+            remarkReadingTime,
+            remarkExcerpt,
+            remarkGithubAdmonitionsToDirectives,
+            remarkLinkCard,
+            remarkDirective,
+            parseDirectiveNode,
+        ],
+        rehypePlugins: [
+            rehypeCallouts,
+            rehypeKatex,
+            rehypeSlug,
+            [
+                rehypeComponents,
+                {
+                    components: {
+                        github: GithubCardComponent,
+                        note: (x, y) => AdmonitionComponent(x, y, 'note'),
+                        tip: (x, y) => AdmonitionComponent(x, y, 'tip'),
+                        important: (x, y) => AdmonitionComponent(x, y, 'important'),
+                        caution: (x, y) => AdmonitionComponent(x, y, 'caution'),
+                        warning: (x, y) => AdmonitionComponent(x, y, 'warning'),
+                    },
+                },
+            ],
+            [
+                rehypeAutolinkHeadings,
+                {
+                    behavior: 'append',
+                    properties: {
+                        className: ['anchor'],
+                    },
+                    content: {
+                        type: 'element',
+                        tagName: 'span',
+                        properties: {
+                            className: ['anchor-icon'],
+                            'data-pagefind-ignore': true,
+                        },
+                        children: [
+                            {
+                                type: 'text',
+                                value: '#',
+                            },
+                        ],
+                    },
+                },
+            ],
+
+        ],
     },
     vite: {
         build: {
