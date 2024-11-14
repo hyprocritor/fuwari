@@ -11,10 +11,10 @@ import { defineConfig } from 'astro/config'
 import Color from 'colorjs.io'
 import rehypeAutolinkHeadings from 'rehype-autolink-headings'
 import rehypeCallouts from 'rehype-callouts'
-import rehypeComponents from 'rehype-components' /* Render the custom directive content */
+import rehypeComponents from 'rehype-components'/* Render the custom directive content */
 import rehypeKatex from 'rehype-katex'
 import rehypeSlug from 'rehype-slug'
-import remarkDirective from 'remark-directive' /* Handle directives */
+import remarkDirective from 'remark-directive'/* Handle directives */
 import remarkGithubAdmonitionsToDirectives from 'remark-github-admonitions-to-directives'
 import remarkLinkCard from 'remark-link-card'
 import remarkMath from 'remark-math'
@@ -24,6 +24,8 @@ import { parseDirectiveNode } from './src/plugins/remark-directive-rehype.js'
 import { remarkExcerpt } from './src/plugins/remark-excerpt.js'
 import { remarkReadingTime } from './src/plugins/remark-reading-time.mjs'
 import { defaultFootnoteBackContent } from './src/plugins/remarkRehypeFootnoteBackContent.mjs'
+
+import partytown from '@astrojs/partytown';
 
 const oklchToHex = str => {
   const DEFAULT_HUE = 250
@@ -40,62 +42,53 @@ export default defineConfig({
   site: 'https://23h.at/',
   base: '/',
   trailingSlash: 'always',
-  integrations: [
-    tailwind(),
-    swup({
-      theme: false,
-      animationClass: 'transition-swup-', // see https://swup.js.org/options/#animationselector
-      // the default value `transition-` cause transition delay
-      // when the Tailwind class `transition-all` is used
-      containers: ['main', '#toc'],
-      smoothScrolling: true,
-      cache: true,
-      preload: true,
-      progress: true,
-      accessibility: true,
-      updateHead: true,
-      updateBodyClass: false,
-      globalInstance: true,
-    }),
-    icon({
-      include: {
-        'material-symbols': ['*'],
-        'fa6-brands': ['*'],
-        'fa6-regular': ['*'],
-        'fa6-solid': ['*'],
-      },
-    }),
-    svelte(),
-    sitemap(),
-    expressiveCode({
-      defaultLocale: 'zh-CN',
-      defaultProps: {
-        wrap: true,
-      },
-      plugins: [pluginLineNumbers()],
-      themes: ['slack-ochin', 'slack-dark'],
-      frames: {
-        extractFileNameFromCode: true,
-        showCopyToClipboardButton: true,
-      },
-    }),
-    mdx({
-      remarkRehype: {
-        footnoteLabel: '注释',
-        footnoteBackContent: defaultFootnoteBackContent,
-      },
-      optimize: true,
-    }),
-    Compress({
-      CSS: true,
-      Image:false,
-      JavaScript: true,
-      HTML: true,
-      Action: {
-        Passed: async () => true, // https://github.com/PlayForm/Compress/issues/376
-      },
-    }),
-  ],
+  integrations: [tailwind(), swup({
+    theme: false,
+    animationClass: 'transition-swup-', // see https://swup.js.org/options/#animationselector
+    // the default value `transition-` cause transition delay
+    // when the Tailwind class `transition-all` is used
+    containers: ['main', '#toc'],
+    smoothScrolling: true,
+    cache: true,
+    preload: true,
+    progress: true,
+    accessibility: true,
+    updateHead: true,
+    updateBodyClass: false,
+    globalInstance: true,
+  }), icon({
+    include: {
+      'material-symbols': ['*'],
+      'fa6-brands': ['*'],
+      'fa6-regular': ['*'],
+      'fa6-solid': ['*'],
+    },
+  }), svelte(), sitemap(), expressiveCode({
+    defaultLocale: 'zh-CN',
+    defaultProps: {
+      wrap: true,
+    },
+    plugins: [pluginLineNumbers()],
+    themes: ['slack-ochin', 'slack-dark'],
+    frames: {
+      extractFileNameFromCode: true,
+      showCopyToClipboardButton: true,
+    },
+  }), mdx({
+    remarkRehype: {
+      footnoteLabel: '注释',
+      footnoteBackContent: defaultFootnoteBackContent,
+    },
+    optimize: true,
+  }), Compress({
+    CSS: true,
+    Image:false,
+    JavaScript: true,
+    HTML: true,
+    Action: {
+      Passed: async () => true, // https://github.com/PlayForm/Compress/issues/376
+    },
+  }), partytown()],
   markdown: {
     remarkPlugins: [
       remarkMath,
