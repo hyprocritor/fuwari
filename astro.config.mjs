@@ -88,8 +88,7 @@ export default defineConfig({
     }),
     Compress({
       CSS: true,
-      Image: false,
-
+      Image:false,
       JavaScript: true,
       HTML: true,
       Action: {
