@@ -10,3 +10,92 @@ draft: false
 
 ## 总述
 
+Astro 默认使用的是 Shiki 这个库来进行代码高亮操作。
+
+::github{repo="shikijs/shiki"}
+
+相比于 PrismJS 这个常见选择，Astro 官方选择 Shiki 的原因无外乎，语言更新，主题更好看（且原生支持所有 VS Code 的主题），官方曾经的解释被放在了这里：
+
+https://github.com/withastro/astro/issues/1212
+
+但是尽管强大，但是能够提供的功能目前也就只有代码高亮一个，而且由于是新的库，Prism 之前就有的比如行号等功能是缺失的。
+
+此时就有了我们的 `Expressive Code`。 这个库是个拓展，可以提供诸如行号，窗口框，文件名这样的功能。
+
+## 安装
+
+对于 Astro 项目而言，安装 Expressive Code 非常简单，仅仅需要一行命令即可：
+
+```shell title=Shell
+npx astro add astro-expressive-code
+```
+
+但是，需要注意的是，默认的安装实际上是有很多问题的，特别是对于 MDX 用户来讲。
+
+## 针对 MDX 的 Fix
+如果正在使用 MDX 来进行 Markdown 的渲染的话，那么需要进行以下几步操作
+
+### 调整优先级
+
+将 Expressive Code 的优先级放在 MDX 上面，防止 MDX 提前将代码块预处理。
+
+```js title=astro.config.js
+export default defineConfig({
+integrations: [
+    expressiveCode(),
+    mdx()
+]})
+```
+
+### 调整 MDX 插件位置
+大部分人的 MDX 都是装了各种各样的插件，但是由于 Expressive Code 会默认修改并重组配置文件，所以可能会导致渲染不生效。
+
+查阅了一些文档后，有提到，**需要将 MDX 的插件配置转移到 Markdown 中**
+
+也就是说将 `rehypePlugins` 和 `remarkPlugins` 这两个字段转移。
+
+由于 MDX 会自动读取 Markdown 中的配置，这样不会造成 MDX 和 Expressive Code 的冲突。
+
+## Expressive Code 的功能
+
+### 主题框架
+
+如同本站一样，Expressive Code 支持将代码框框起来，变成编辑器的样子，并增加一个 title 的部分：
+
+这里的代码如下：
+
+~~~markdown title="example.mdx"
+
+```java title=HelloWorld.java
+public static void main(string args[]){
+    System.out.println("Hello World!")
+}
+```
+
+~~~
+
+
+### 行高亮
+
+代码高亮也算是Express Code 的功能之一（主要是默认的 Shiki 没有提供类似的功能），从官方文档投下来的代码如下：
+
+~~~markdown title="lineHighLight.mdx" {2, 5, 8-9}
+```js {1, 4, 7-8}
+// Line 1 - targeted by line number
+// Line 2
+// Line 3
+// Line 4 - targeted by line number
+// Line 5
+// Line 6
+// Line 7 - targeted by range "7-8"
+// Line 8 - targeted by range "7-8"
+```
+~~~
+
+### 行号
+
+行号也算是一个常用组件，与 PrimsJS 一样，需要单独引入一个包：
+```shell title="Install Plugin"
+pnpm i @expressive-code/plugin-line-numbers
+```
+
