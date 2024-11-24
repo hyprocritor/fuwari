@@ -1,32 +1,19 @@
 <script lang="ts">
 import { onMount } from 'svelte'
-import { url } from '@utils/url-utils.ts'
 import { i18n } from '@i18n/translation'
 import I18nKey from '@i18n/i18nKey'
 let keywordDesktop = ''
 let keywordMobile = ''
 let result = []
-const fakeResult = [
-  {
-    url: url('/'),
-    meta: {
-      title: 'This Is a Fake Search Result',
-    },
-    excerpt:
-      'Because the search cannot work in the <mark>dev</mark> environment.',
-  },
-  {
-    url: url('/'),
-    meta: {
-      title: 'If You Want to Test the Search',
-    },
-    excerpt: 'Try running <mark>npm build && npm preview</mark> instead.',
-  },
-]
 
 let search = (keyword: string, isDesktop: boolean) => {}
 
 async function useMeiliSearch (keyword: string) {
+    if (!keyword){
+        return {
+            hits:[]
+        }
+    }
     return (await fetch(`${import.meta.env.PUBLIC_MEILISEARCH_HOST}/indexes/articles/search`, {
         method: 'POST',
         headers: {
@@ -37,6 +24,7 @@ async function useMeiliSearch (keyword: string) {
             'q': keyword,
             "attributesToHighlight":["content","title","description"],
             "attributesToCrop":["content"],
+            "attributesToRetrieve":["url"],
             "highlightPostTag":"</mark>",
             "highlightPreTag":"<mark>"
         })
@@ -53,13 +41,10 @@ onMount(() => {
     }
 
     let arr = []
-
       const ret = await useMeiliSearch(keyword)
       for (const item of ret.hits) {
         arr.push(item)
       }
-
-
     if (!arr.length && isDesktop) {
       panel.classList.add('float-panel-closed')
       return
@@ -87,7 +72,7 @@ $: search(keywordMobile, false)
       dark:bg-white/5 dark:hover:bg-white/10 dark:focus-within:bg-white/10
 ">
     <slot name="search-icon"></slot>
-    <input placeholder="{i18n(I18nKey.search)}" bind:value={keywordDesktop} on:focus={() => search(keywordDesktop, true)}
+    <input placeholder="{i18n(I18nKey.search)}" bind:value={keywordDesktop} on:change={() => search(keywordDesktop, true)}
            class="transition-all pl-10 text-sm bg-transparent outline-0
          h-full w-40 active:w-60 focus:w-60 text-black/50 dark:text-white/50"
     >
