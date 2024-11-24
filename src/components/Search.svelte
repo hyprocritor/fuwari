@@ -9,7 +9,7 @@ let result = []
 let search = (keyword: string, isDesktop: boolean) => {}
 
 async function useMeiliSearch (keyword: string) {
-    if (!keyword){
+    if (!keyword || keywordDesktop.length <2) {
         return {
             hits:[]
         }
@@ -26,7 +26,9 @@ async function useMeiliSearch (keyword: string) {
             "attributesToCrop":["content"],
             "attributesToRetrieve":["url"],
             "highlightPostTag":"</mark>",
-            "highlightPreTag":"<mark>"
+            "highlightPreTag":"<mark>",
+            "cropLength":35,
+            "limit":5
         })
     })).json()
 }

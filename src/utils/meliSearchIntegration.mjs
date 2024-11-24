@@ -14,12 +14,14 @@ const cloudflareAccessId = process.env.CLOUDFLARE_ACCESS_CLIENT_ID
 const cloudflareAccessSecret = process.env.CLOUDFLARE_ACCESS_CLIENT_SECRET
 
 const client = new MeiliSearch({
-    host: searchInternalUrl, apiKey: searchMasterKey, requestConfig: {
+    host: searchInternalUrl,
+    apiKey: searchMasterKey,
+    requestConfig: {
         headers: {
-            "CF-Access-Client-Id": cloudflareAccessId,
-            "CF-Access-Client-Secret": cloudflareAccessSecret
-        }
-    }
+            'CF-Access-Client-Id': cloudflareAccessId,
+            'CF-Access-Client-Secret': cloudflareAccessSecret,
+        },
+    },
 })
 
 async function getPosts() {
@@ -37,8 +39,19 @@ async function getPosts() {
 
             // Get the main content
             const contentElement = document.querySelector('.markdown-content')
-            const content = contentElement ? contentElement.textContent.trim() : ''
+            // Remove code blocks and rlc-container elements
+            const codeBlocks = contentElement?.querySelectorAll('pre')
+            codeBlocks?.forEach(block => block.remove())
+            const expressiveCode = contentElement?.querySelectorAll('.expressive-code')
+            expressiveCode?.forEach(block => block.remove())
+            const rlcContainers = contentElement?.querySelectorAll('.rlc-container')
+            rlcContainers?.forEach(container => container.remove())
+            const scripts = contentElement?.querySelectorAll('script')
+            scripts?.forEach(container => container.remove())
 
+            const githubContainers = contentElement?.querySelectorAll('.card-github')
+            githubContainers?.forEach(container => container.remove())
+            const content = contentElement ? contentElement.textContent.trim() : ''
             // Get metadata from JSON-LD
             const scriptElement = document.querySelector(
                 'script[type="application/ld+json"]',
@@ -81,4 +94,3 @@ async function main() {
 }
 
 main().catch(console.error)
-
