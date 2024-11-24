@@ -67,11 +67,14 @@ async function main() {
 
   // Get the index instance
   const index = await client.getIndex(indexName)
+    console.log("Get Index Complete: ", index.uid)
 
   await index.deleteAllDocuments()
-
+    console.log("Deleted All Documents.")
   // Add documents to the index
   await index.addDocuments(posts)
+    console.log("Added new Documents.")
 }
 
 main().catch(console.error)
+
