@@ -26,6 +26,7 @@ import { remarkReadingTime } from './src/plugins/remark-reading-time.mjs'
 import { defaultFootnoteBackContent } from './src/plugins/remarkRehypeFootnoteBackContent.mjs'
 
 import partytown from '@astrojs/partytown';
+import {pluginCollapsibleSections} from "@expressive-code/plugin-collapsible-sections";
 
 const oklchToHex = str => {
   const DEFAULT_HUE = 250
@@ -68,7 +69,7 @@ export default defineConfig({
     defaultProps: {
       wrap: true,
     },
-    plugins: [pluginLineNumbers()],
+    plugins: [pluginLineNumbers(),pluginCollapsibleSections()],
     themes: ['slack-ochin', 'slack-dark'],
     frames: {
       extractFileNameFromCode: true,

@@ -13,7 +13,6 @@ const searchInternalUrl = process.env.MELISEARCH_INTERNAL_URL
 const cloudflareAccessId = process.env.CLOUDFLARE_ACCESS_CLIENT_ID
 const cloudflareAccessSecret = process.env.CLOUDFLARE_ACCESS_CLIENT_SECRET
 
-console.log(process.env)
 const client = new MeiliSearch({
     host: searchInternalUrl, apiKey: searchMasterKey, requestConfig: {
         headers: {
@@ -69,12 +68,6 @@ async function getPosts() {
 async function main() {
     const posts = await getPosts()
     const indexName = 'articles'
-
-    // // Delete existing index if it exists
-    // await client.deleteIndexIfExists(indexName)
-
-    // // Create new index
-    // await client.createIndex(indexName, { primaryKey: 'id' })
 
     // Get the index instance
     const index = await client.getIndex(indexName)
