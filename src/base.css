@@ -32,6 +32,9 @@
     .search-panel mark {
         @apply bg-transparent text-[var(--primary)]
     }
+    .search-panel em {
+        @apply bg-transparent text-[var(--primary)]
+    }
 
     .btn-card {
         @apply transition flex items-center justify-center bg-[var(--card-bg)] hover:bg-[var(--btn-card-bg-hover)]
@@ -164,7 +167,7 @@
     .dash-line {
         position: relative;
     }
-        
+
     .dash-line::before {
         content: "";
         position: absolute;
