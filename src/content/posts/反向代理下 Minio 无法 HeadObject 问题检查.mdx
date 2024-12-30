@@ -1,0 +1,78 @@
+---
+title: 反向代理下 Minio 无法 HeadObject 问题检查
+published: 2024-12-30
+description: '反向代理下 Minio 无法 HeadObject 问题检查'
+image: ''
+tags: [Minio, 反向代理, Nginx]
+category: '后端'
+draft: false
+---
+
+
+## 问题描述
+
+这两天自己部署了一台 MinIO 的服务器，用来提供 S3 的存储相关 API。 （这主要得益于 Alist 的相关性能并不算优秀才用的 Minio。
+但是，在于 Directus 进行整合的时候，出现了内部服服务错误。
+
+于此同时，在使用 RClone 进行文件上传的时候，也出现了 Head Object 时，返回 403 的错误。
+
+
+## Head Object 是什么
+
+Head Object 是 S3 的 API 之一，用于获取对象的元数据，而不需要实际下载对象的内容。
+
+相比于 Get Object 而言，Head Object 的请求头中不包含对象的内容，仅仅只通过一个 HTTP `HEAD` 请求，就能拿到部分文件内容和基础数据。
+
+与 Get Object 相比，传输量更少，很多时候会被一些 S3 服务用来先期判断文件是否存在，或者上传之后校验文件使用。
+
+## 问题排查
+
+一开始曾经怀疑是 Minio 的权限配置存在错误。但是一番调查后发现，即便使用最高权限账户 ConsoleAdmin，且 ACL 全部配置为允许，依然会出现 403 的错误。
+
+网上一番搜索过后，所有的内容都在说 Cloudflare 的缓存策略存在问题。
+
+但是，我的服务中并没有使用任何 Cloudflare 对 S3 服务进行代理。（法律上将，很多人都提到，Cloudflare 代理对象存储是违反 TOS 的）。
+
+同时，我又将服务换成了 Garage 来进行处理 S3 内容，但是问题却消失了……
+
+但这并不是最优解，主要原因在于 Garage 的 Bug 也太多了。
+
+## 问题解决
+
+考虑到问题仅仅出现在 HeadObject，而网上并没有针对 Minio 的反馈，那么问题应该就是出现在反向代理上。
+
+在百般折磨后，终于在 1panel 的官方 GitHub 中找到了相关的 Issue。
+
+https://github.com/1Panel-dev/1Panel/issues/3924
+
+里面提供了一个解决方法：
+
+```nginx
+proxy_cache_convert_head off;
+```
+
+就这么简单的一行语句即可解决问题。
+
+## 了解 proxy_cache_convert_head
+
+调查后发现，1panel 默认配置的 OpenResty 中，做了于 Cloudflare 一样的事情：
+
+**将 HEAD 请求转换为 GET 请求并进行缓存**
+
+当然我们不是说这个策略是错误的，只是在 S3 的场景下，这个策略是有问题的。
+
+这与 S3 的签名设计有关。
+
+为了防止非法请求, S3 相关的请求，均需要携带内容签名。
+
+签名的一个大概流程可以参考下图：
+
+![S3 签名流程](https://img.23h.at/i/2024/12/30/helbt1.webp)
+
+从图中可以看到，签名中需要同时包含 HTTP 的请求方法，请求路径，请求头，参数等等。
+
+这就导致一个问题，Nginx 提供的 `proxy_cache_convert_head` 策略，会将 HEAD 请求转换为 GET 请求，导致签名无法匹配。
+
+最后 Minio 只能返回一个 Access Denied 的错误。
+
+
